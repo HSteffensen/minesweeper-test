@@ -1,28 +1,22 @@
 <script lang="ts">
-    import MinesweeperGame, { type GridPosition } from "$lib/minesweeper/gamemodel";
+    import { allPositions, newMinesweeper, type Position2D } from "$lib/minesweeper/game-state";
 
     let gameSize = 10;
     let mineCount = 10;
-    let gameModel = MinesweeperGame.new(gameSize, gameSize, mineCount);
-
-    function clickCell(cell: GridPosition) {
-        gameModel.revealCell(cell);
-        gameModel = gameModel.clone();
-    }
-
-    function rightClickCell(cell: GridPosition) {
-        gameModel.toggleFlagCell(cell);
-        gameModel = gameModel.clone();
-    }
+    let {
+        state: gameState,
+        toggleFlag,
+        reveal,
+    } = newMinesweeper("Simple", gameSize, gameSize, mineCount);
 </script>
 
 <div class="grid grid-cols-1 auto-cols-min w-max">
     <div class="flex flex-row justify-around">
         <div class="w-min">42</div>
         <div class="w-min">
-            {#if gameModel.isWon}
+            {#if $gameState.isWon}
                 :D
-            {:else if gameModel.isLost}
+            {:else if $gameState.isLost}
                 ;(
             {:else}
                 :)
@@ -31,34 +25,33 @@
         <div class="w-min">24</div>
     </div>
     <div class="grid game" style:--game-size={gameSize}>
-        {#each gameModel.cellsList as gameCell}
-            {#if gameCell.val === "hidden"}
+        {#each allPositions(gameSize, gameSize) as { x, y }}
+            {#if $gameState.getCellVisibility(x, y) === "hidden"}
                 <div
                     class="text-center bg-slate-300 hover:bg-slate-500"
-                    on:click={() => clickCell(gameCell.pos)}
-                    on:contextmenu|preventDefault={() => rightClickCell(gameCell.pos)}
+                    on:click={() => reveal(x, y)}
+                    on:contextmenu|preventDefault={() => toggleFlag(x, y)}
                     role="button"
                     tabindex="0"
-                    on:keypress={() => clickCell(gameCell.pos)}
+                    on:keypress={() => reveal(x, y)}
                 />
-            {:else if gameCell.val === "flag"}
+            {:else if $gameState.getCellVisibility(x, y) === "flagged"}
                 <div
                     class="text-center bg-slate-300 hover:bg-slate-500"
-                    on:click={() => rightClickCell(gameCell.pos)}
-                    on:contextmenu|preventDefault={() => rightClickCell(gameCell.pos)}
+                    on:contextmenu|preventDefault={() => toggleFlag(x, y)}
                     role="button"
                     tabindex="0"
-                    on:keypress={() => rightClickCell(gameCell.pos)}
+                    on:keypress={() => toggleFlag(x, y)}
                 >
                     ?
                 </div>
-            {:else if gameCell.val === "mine"}
+            {:else if $gameState.getCellValue(x, y) === "mine"}
                 <div class="text-center bg-red-600">M</div>
-            {:else if gameCell.val === "0"}
+            {:else if $gameState.getCellValue(x, y) === "0"}
                 <div class="text-center bg-slate-100" />
             {:else}
                 <div class="text-center bg-slate-100">
-                    {gameCell.val}
+                    {$gameState.getCellValue(x, y)}
                 </div>
             {/if}
         {/each}
