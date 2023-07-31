@@ -1,8 +1,11 @@
 import { allPositions } from ".";
-import { MinesweeperState, type CellValue, type MinesweeperGame } from "./state";
+import { MinesweeperStateImpl, type CellValue, type MinesweeperGame } from "./state";
 
 export const SimpleMinesweeper: MinesweeperGame = {
-    flagCell: function (game: MinesweeperState, x: number, y: number): MinesweeperState {
+    flagCell: function (game: MinesweeperStateImpl, x: number, y: number): MinesweeperStateImpl {
+        if (game.isFinished) {
+            return game;
+        }
         game.mapCell(x, y, (cell) => {
             switch (cell.visibility) {
                 case "hidden":
@@ -16,9 +19,13 @@ export const SimpleMinesweeper: MinesweeperGame = {
                     throw Error("unreachable code");
             }
         });
+
         return game;
     },
-    revealCell: function (game: MinesweeperState, x: number, y: number): MinesweeperState {
+    revealCell: function (game: MinesweeperStateImpl, x: number, y: number): MinesweeperStateImpl {
+        if (game.isFinished) {
+            return game;
+        }
         const cellBeforeChange = game.getCellState(x, y);
         game.mapCell(x, y, (cell) => {
             if (cell.visibility === "hidden") {
@@ -40,11 +47,17 @@ export const SimpleMinesweeper: MinesweeperGame = {
 
         return game;
     },
-    new: function (width: number, height: number, mineCount: number): MinesweeperState {
-        const randomMines = allPositions(width, height)
-            .sort(() => 0.5 - Math.random())
-            .slice(0, mineCount);
-        const grid = new MinesweeperState(width, height);
+    new: function (width: number, height: number, mineCount: number): MinesweeperStateImpl {
+        const minesShuffle = allPositions(width, height);
+        for (let i = 0; i < mineCount; i++) {
+            const j = i + Math.floor(Math.random() * (minesShuffle.length - i));
+            const temp = minesShuffle[i];
+            minesShuffle[i] = minesShuffle[j];
+            minesShuffle[j] = temp;
+        }
+        const randomMines = minesShuffle.slice(0, mineCount);
+
+        const grid = new MinesweeperStateImpl(width, height);
         for (const { x, y } of randomMines) {
             grid.setCellValue(x, y, "mine");
         }
@@ -61,6 +74,7 @@ export const SimpleMinesweeper: MinesweeperGame = {
                 }
             }
         }
+
         return grid;
     },
 };

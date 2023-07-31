@@ -1,16 +1,16 @@
 import { describe, test, expect } from "vitest";
-import { mapCell, newMinesweeperGrid, type CellState, inboundNeighbors } from "./state";
+import { MinesweeperStateImpl } from "./state";
 
 test("newMinesweeperGame", () => {
     const width = 3;
     const height = 5;
-    const grid = newMinesweeperGrid(width, height);
+    const grid = new MinesweeperStateImpl(width, height);
 
     expect(grid).toHaveLength(height);
     for (let y = 0; y < height; y++) {
-        expect(grid[y]).toHaveLength(width);
+        expect(grid.stateGrid[y]).toHaveLength(width);
         for (let x = 0; x < width; x++) {
-            expect(grid[y][x]).toEqual({ value: "0", state: "hidden" });
+            expect(grid.stateGrid[y][x]).toEqual({ value: "0", state: "hidden" });
         }
     }
 });
@@ -18,21 +18,17 @@ test("newMinesweeperGame", () => {
 test("mapCell", () => {
     const width = 3;
     const height = 5;
-    const grid = mapCell(
-        newMinesweeperGrid(width, height),
-        2,
-        3,
-        (): CellState => ({ state: "revealed", value: "3" }),
-    );
+    const grid = new MinesweeperStateImpl(width, height);
+    grid.mapCell(2, 3, () => ({ visibility: "revealed", value: "3" }));
 
     expect(grid).toHaveLength(height);
     for (let y = 0; y < height; y++) {
-        expect(grid[y]).toHaveLength(width);
+        expect(grid.stateGrid[y]).toHaveLength(width);
         for (let x = 0; x < width; x++) {
             if (x === 2 && y === 3) {
-                expect(grid[y][x]).toEqual({ value: "3", state: "revealed" });
+                expect(grid.stateGrid[y][x]).toEqual({ value: "3", visibility: "revealed" });
             } else {
-                expect(grid[y][x]).toEqual({ value: "0", state: "hidden" });
+                expect(grid.stateGrid[y][x]).toEqual({ value: "0", visibility: "hidden" });
             }
         }
     }
@@ -42,9 +38,9 @@ describe("inboundNeighbors", () => {
     test("middle of the grid", () => {
         const width = 3;
         const height = 5;
-        const grid = newMinesweeperGrid(width, height);
+        const grid = new MinesweeperStateImpl(width, height);
 
-        const actual = inboundNeighbors(grid, 1, 1);
+        const actual = grid.inboundNeighbors(1, 1);
         const expected = [
             { x: 0, y: 0 },
             { x: 1, y: 0 },
@@ -60,9 +56,9 @@ describe("inboundNeighbors", () => {
     test("0 edges of the grid", () => {
         const width = 3;
         const height = 5;
-        const grid = newMinesweeperGrid(width, height);
+        const grid = new MinesweeperStateImpl(width, height);
 
-        const actual = inboundNeighbors(grid, 0, 0);
+        const actual = grid.inboundNeighbors(0, 0);
         const expected = [
             { x: 0, y: 1 },
             { x: 1, y: 0 },
@@ -73,9 +69,9 @@ describe("inboundNeighbors", () => {
     test("high edges of the grid", () => {
         const width = 3;
         const height = 5;
-        const grid = newMinesweeperGrid(width, height);
+        const grid = new MinesweeperStateImpl(width, height);
 
-        const actual = inboundNeighbors(grid, width - 1, height - 1);
+        const actual = grid.inboundNeighbors(width - 1, height - 1);
         const expected = [
             { x: width - 1, y: height - 2 },
             { x: width - 2, y: height - 1 },

@@ -9,8 +9,34 @@ type CellState = {
     visibility: CellVisibility;
 };
 
-export class MinesweeperState {
+export interface MinesweeperState {
+    stateGrid: ("hidden" | "flagged" | CellValue | undefined)[][];
+
+    width: number;
+    height: number;
+    remainingMineCount: number;
+
+    isWon: boolean;
+    isLost: boolean;
+    isFinished: boolean;
+
+    getCellVisibility(x: number, y: number): CellVisibility;
+    getCellValue(x: number, y: number): CellValue | undefined;
+}
+
+export class MinesweeperStateImpl implements MinesweeperState {
     private grid: CellState[][];
+    get stateGrid(): ("hidden" | "flagged" | CellValue | undefined)[][] {
+        return this.grid.map((row) =>
+            row.map((cell) => {
+                if (cell.visibility === "hidden" || cell.visibility === "flagged") {
+                    return cell.visibility;
+                } else {
+                    return cell.value;
+                }
+            }),
+        );
+    }
 
     constructor(width: number, height: number) {
         this.grid = [];
@@ -31,10 +57,17 @@ export class MinesweeperState {
         return this.grid.length;
     }
 
-    get mineCount(): number {
+    get remainingMineCount(): number {
         return this.grid.reduce(
             (sum, row) =>
-                sum + row.reduce((rowSum, cell) => rowSum + (cell.value === "mine" ? 1 : 0), 0),
+                sum +
+                row.reduce(
+                    (rowSum, cell) =>
+                        rowSum +
+                        (cell.value === "mine" ? 1 : 0) -
+                        (cell.visibility === "flagged" ? 1 : 0),
+                    0,
+                ),
             0,
         );
     }
@@ -55,8 +88,8 @@ export class MinesweeperState {
         );
     }
 
-    get allCells(): CellState[] {
-        return this.grid.flat();
+    get isFinished(): boolean {
+        return this.isLost || this.isWon;
     }
 
     getCellState(x: number, y: number): CellState {
@@ -113,9 +146,9 @@ export class MinesweeperState {
 }
 
 export type MinesweeperGame = {
-    flagCell: (game: MinesweeperState, x: number, y: number) => MinesweeperState;
-    revealCell: (game: MinesweeperState, x: number, y: number) => MinesweeperState;
-    new: (width: number, height: number, mineCount: number) => MinesweeperState;
+    flagCell: (game: MinesweeperStateImpl, x: number, y: number) => MinesweeperStateImpl;
+    revealCell: (game: MinesweeperStateImpl, x: number, y: number) => MinesweeperStateImpl;
+    new: (width: number, height: number, mineCount: number) => MinesweeperStateImpl;
 };
 
 function neighbors(xPos: number, yPos: number): Position2D[] {

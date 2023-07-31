@@ -1,5 +1,5 @@
-import { writable } from "svelte/store";
-import type { MinesweeperGame, MinesweeperState } from "./state";
+import { writable, type Readable } from "svelte/store";
+import type { MinesweeperGame, MinesweeperState, MinesweeperStateImpl } from "./state";
 import { SimpleMinesweeper } from "./simple-minesweeper";
 
 export type Position2D = { x: number; y: number };
@@ -21,7 +21,12 @@ export function newMinesweeper(
     width: number,
     height: number,
     mineCount: number,
-) {
+): {
+    state: Readable<MinesweeperState>;
+    toggleFlag(x: number, y: number): void;
+    reveal(x: number, y: number): void;
+    reset(newWidth?: number, newHeight?: number, newMineCount?: number): void;
+} {
     let gameRules: MinesweeperGame;
     switch (gameType) {
         case "Simple":
@@ -33,7 +38,7 @@ export function newMinesweeper(
             break;
     }
 
-    const state = writable<MinesweeperState>(gameRules.new(width, height, mineCount));
+    const state = writable<MinesweeperStateImpl>(gameRules.new(width, height, mineCount));
 
     function toggleFlag(x: number, y: number) {
         state.update((current) => gameRules.flagCell(current, x, y));
